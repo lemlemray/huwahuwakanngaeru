@@ -92,14 +92,25 @@ button{font:inherit;cursor:pointer}
 }
 @media(hover:hover){.b:hover{box-shadow:inset 0 0 22px hsla(var(--h),95%,80%,.65),0 8px 30px hsla(var(--h),60%,40%,.2)}}
 @media(prefers-reduced-motion:reduce){.b.wob,.b.born,.pop,.spark{animation:none}}
+
+.hright{display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
+.hactions{display:flex;gap:8px;pointer-events:auto;align-items:center}
+#shareBtn{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;backdrop-filter:blur(10px);display:inline-flex;align-items:center;gap:6px;font-size:14px}
+#shareBtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#sharePanel{position:fixed;inset:0;display:none;place-items:center;z-index:11;background:rgba(20,10,40,.25);backdrop-filter:blur(3px);padding:16px}
+#sharePanel.open{display:grid}
+#sharePreview{width:100%;max-height:46vh;object-fit:contain;border-radius:16px;border:1px solid var(--line);display:block;background:#dceeff}
+#shareText{width:100%;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.12);color:inherit;font:inherit;font-size:14px;resize:vertical;min-height:64px;margin-top:12px}
+.share-note{font-size:12.5px;color:var(--soft);line-height:1.65;margin-top:10px}
+@media(max-width:600px),(pointer:coarse){.hright{align-items:flex-end}.help.pop-help{top:calc(118px + var(--sat))}}
 </style>
 </head>
 <body>
 <div id="stage" aria-label="シャボン玉の空"></div>
 <header>
   <div><h1>しゃぼん日記</h1><div class="count" id="count"></div></div>
-  <button id="helpBtn" type="button" aria-label="使い方" aria-expanded="false">?</button>
-  <div class="help" id="help"><span class="pc">Enterで浮かべる・Shift+Enterで改行<br>ドラッグで動かす／重ねるとくっつく<br>クリックで開く・ゴミ箱へ運ぶと消える<br>玉を選んでDeleteキーでも消せます</span><span class="sp" hidden>送信キーで浮かべる<br>指でつかんで動かす／重ねるとくっつく<br>タップで開く（改行・書き直しもここで）<br>右下のゴミ箱へ運ぶと消える</span></div>
+  <div class="hright"><div class="hactions"><button id="shareBtn" type="button" aria-label="画面を共有して投稿">🫧 共有</button><button id="helpBtn" type="button" aria-label="使い方" aria-expanded="false">?</button></div>
+  <div class="help" id="help"><span class="pc">Enterで浮かべる・Shift+Enterで改行<br>ドラッグで動かす／重ねるとくっつく<br>クリックで開く・ゴミ箱へ運ぶと消える<br>玉を選んでDeleteキーでも消せます</span><span class="sp" hidden>送信キーで浮かべる<br>指でつかんで動かす／重ねるとくっつく<br>タップで開く（改行・書き直しもここで）<br>右下のゴミ箱へ運ぶと消える</span></div></div>
 </header>
 <div id="trash"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>はじく</div></div>
 <form id="f">
@@ -119,6 +130,23 @@ button{font:inherit;cursor:pointer}
       <button class="pbtn danger" id="pdel" type="button">はじく</button>
       <button class="pbtn" id="pclose" type="button">とじる</button>
     </div>
+  </div>
+</div>
+<div id="sharePanel" role="dialog" aria-modal="true" aria-labelledby="stitle">
+  <div class="sheet">
+    <h2 id="stitle">画面を共有</h2>
+    <div class="meta">いまの空を、そのまま画像にしました</div>
+    <img id="sharePreview" alt="しゃぼん日記のスクリーンショット">
+    <textarea id="shareText" aria-label="投稿文"></textarea>
+    <div class="row">
+      <button class="pbtn" id="sShare" type="button">共有する</button>
+      <button class="pbtn" id="sX" type="button">Xにポスト</button>
+      <button class="pbtn" id="sSave" type="button">画像を保存</button>
+      <button class="pbtn" id="sCopy" type="button">画像をコピー</button>
+      <span class="grow"></span>
+      <button class="pbtn" id="sClose" type="button">とじる</button>
+    </div>
+    <div class="share-note">スマホでは「共有する」→ X を選ぶと、画像付きでそのまま投稿できます。パソコンでは「Xにポスト」を押すと画像が保存されて投稿画面が開きます。開いたら、保存した画像を添付してください。玉の中身は投稿文には自動で入りません。</div>
   </div>
 </div>
 <script>
@@ -214,7 +242,8 @@ function merge(a,into){
   a.el.remove();bubbles=bubbles.filter(x=>x!==a);
   draw(into);wob(into);sparkle(into.x,into.y,into.h,14);updateCount();save();
 }
-function showToast(m){document.getElementById('tmsg').textContent=m;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),5000)}
+function showToast(m){document.getElementById('undo').style.display='';document.getElementById('tmsg').textContent=m;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),5000)}
+function showInfo(m){showToast(m);document.getElementById('undo').style.display='none'}
 document.getElementById('undo').onclick=()=>{if(!lastDeleted)return;const d=lastDeleted;const b=make(d.texts,d.x,d.y,d.h,d.t);b.el.classList.add('born');lastDeleted=null;toast.classList.remove('show');updateCount();save()};
 
 /* ---- 入力 ---- */
@@ -302,6 +331,101 @@ document.getElementById('pdel').onclick=()=>{const b=current();panel.classList.r
 document.getElementById('pclose').onclick=closePanel;
 panel.addEventListener('click',e=>{if(e.target===panel)closePanel()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('open'))closePanel()});
+
+
+/* ---- 共有・スクリーンショット ---- */
+const sharePanel=document.getElementById('sharePanel'),sharePreview=document.getElementById('sharePreview'),shareText=document.getElementById('shareText');
+let shareBlob=null,shareUrl='';
+const APP_URL='https://lemlemray.github.io/huwahuwakanngaeru/';
+function isDarkMode(){const t=document.documentElement.dataset.theme;if(t)return t==='dark';return matchMedia('(prefers-color-scheme: dark)').matches}
+function wrapJP(ctx,text,maxW){
+  const lines=[];let line='';
+  for(const ch of String(text)){
+    if(ch==='\n'){lines.push(line);line='';continue}
+    const test=line+ch;
+    if(line && ctx.measureText(test).width>maxW){lines.push(line);line=ch}else line=test;
+  }
+  if(line||!lines.length)lines.push(line);
+  return lines;
+}
+async function makeSnapshot(){
+  try{await document.fonts.ready}catch(e){}
+  const w=W(),h=H(),dpr=Math.min(window.devicePixelRatio||1,2);
+  const c=document.createElement('canvas');c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  const dark=isDarkMode();
+  const g=ctx.createLinearGradient(0,0,w*0.25,h);
+  if(dark){g.addColorStop(0,'#14123a');g.addColorStop(1,'#0d3550')}else{g.addColorStop(0,'#ffd6e8');g.addColorStop(1,'#b9e4ff')}
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  const ink=dark?'#f1ecff':'#2b2340',soft=dark?'#b9b1d6':'#6b6185';
+  ctx.fillStyle=ink;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  ctx.font='700 22px "Zen Maru Gothic",sans-serif';ctx.fillText('しゃぼん日記',18,38);
+  ctx.font='400 13px "Zen Maru Gothic",sans-serif';ctx.fillStyle=soft;
+  ctx.fillText(bubbles.length?bubbles.length+'個のシャボン玉':'まだ何も浮かんでいません',18,58);
+  for(const b of bubbles){
+    const r=b.r,x=b.x,y=b.y;
+    ctx.save();
+    ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.clip();
+    const bg=ctx.createRadialGradient(x-r*0.3,y-r*0.35,r*0.08,x,y,r);
+    bg.addColorStop(0,'rgba(255,255,255,0.22)');bg.addColorStop(0.55,'rgba(255,255,255,0.08)');
+    bg.addColorStop(0.8,`hsla(${b.h},95%,72%,0.38)`);bg.addColorStop(0.93,`hsla(${(b.h+70)%360},95%,75%,0.55)`);bg.addColorStop(1,'rgba(255,255,255,0.75)');
+    ctx.fillStyle=bg;ctx.fillRect(x-r,y-r,r*2,r*2);
+    const hl=ctx.createRadialGradient(x-r*0.38,y-r*0.48,0,x-r*0.38,y-r*0.48,r*0.28);
+    hl.addColorStop(0,'rgba(255,255,255,0.95)');hl.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=hl;ctx.fillRect(x-r,y-r,r*2,r*2);
+    ctx.restore();
+    ctx.beginPath();ctx.arc(x,y,r-0.5,0,6.2832);ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1;ctx.stroke();
+    const total=b.texts.join('').length;
+    const fs=total>120?12.5:total>50?14:15.5;
+    ctx.font=`500 ${fs}px "Zen Maru Gothic",sans-serif`;ctx.fillStyle=ink;ctx.textAlign='center';ctx.textBaseline='middle';
+    const maxW=r*1.32,lh=fs*1.45,maxLines=Math.max(1,Math.floor(r*1.45/lh));
+    let lines=[];
+    b.texts.forEach((s,idx)=>{if(idx>0){lines.push('•')} const t=s.length>90?s.slice(0,88)+'…':s; lines.push(...wrapJP(ctx,t,maxW))});
+    if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/.$/,'…')}
+    const startY=y-((lines.length-1)*lh)/2;
+    lines.forEach((ln,i)=>{ctx.fillStyle=ln==='•'?`hsla(${b.h},90%,55%,0.9)`:ink;ctx.fillText(ln,x,startY+i*lh,maxW)});
+  }
+  ctx.font='400 11px "Zen Maru Gothic",sans-serif';ctx.fillStyle=soft;ctx.textAlign='right';
+  ctx.fillText(APP_URL,w-14,h-12);
+  return new Promise(res=>c.toBlob(res,'image/png'));
+}
+async function openShare(){
+  shareText.value=`しゃぼん日記 🫧 ${bubbles.length}個のシャボン玉が浮かんでいます\n${APP_URL}\n#しゃぼん日記`;
+  sharePanel.classList.add('open');
+  sharePreview.removeAttribute('src');
+  shareBlob=await makeSnapshot();
+  if(shareUrl)URL.revokeObjectURL(shareUrl);
+  if(shareBlob){shareUrl=URL.createObjectURL(shareBlob);sharePreview.src=shareUrl}
+}
+function shareFile(){return shareBlob?new File([shareBlob],'shabon-diary.png',{type:'image/png'}):null}
+function downloadShare(){
+  if(!shareUrl)return;
+  const a=document.createElement('a');a.href=shareUrl;a.download='shabon-diary.png';document.body.appendChild(a);a.click();a.remove();
+}
+document.getElementById('shareBtn').addEventListener('click',openShare);
+document.getElementById('sClose').onclick=()=>sharePanel.classList.remove('open');
+sharePanel.addEventListener('click',e=>{if(e.target===sharePanel)sharePanel.classList.remove('open')});
+document.getElementById('sSave').onclick=()=>{downloadShare();showInfo('画像を保存しました')};
+document.getElementById('sCopy').onclick=async()=>{try{if(!shareBlob)throw 0;await navigator.clipboard.write([new ClipboardItem({'image/png':shareBlob})]);showInfo('画像をコピーしました')}catch(e){showInfo('コピーできないブラウザです。「画像を保存」を使ってください')}};
+document.getElementById('sShare').onclick=async()=>{
+  const f=shareFile(),text=shareText.value;
+  try{
+    if(f&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text,title:'しゃぼん日記'});return}
+    if(navigator.share){await navigator.share({text,url:APP_URL,title:'しゃぼん日記'});return}
+    throw 0;
+  }catch(e){if(e&&e.name==='AbortError')return;showInfo('このブラウザでは共有が使えません。「画像を保存」→ Xで添付してください')}
+};
+document.getElementById('sX').onclick=async()=>{
+  const f=shareFile(),text=shareText.value;
+  const intent='https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
+  try{
+    if(f&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text});showInfo('共有先でXを選んでください');return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  downloadShare();
+  window.open(intent,'_blank','noopener,width=600,height=540');
+  showInfo('画像を保存しました。Xの投稿画面で画像を添付してください');
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sharePanel.classList.contains('open'))sharePanel.classList.remove('open')});
 
 /* ---- ふわふわ ---- */
 let last=performance.now(),saveTick=0;
