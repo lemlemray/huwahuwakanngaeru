@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#ffd6e8">
+<title>しゃぼん日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: やわらかく、静か。書くことを邪魔しない
+   IDEA: 夕暮れの空に吹いたシャボン玉。一つの思いつき＝一つの玉
+   PICTURE: 画面全体が空。玉が漂い、寄せればぷるんとくっつく
+   COLOUR and TYPE: 昼は桃色から水色の空、夜は藍。Zen Maru Gothic
+   LAYOUT: 全面の空＋下に一本の書き込み欄。説明は小さく右上 */
+:root{color-scheme:light dark;
+--sky1:light-dark(#ffd6e8,#14123a);--sky2:light-dark(#b9e4ff,#0d3550);
+--ink:light-dark(#2b2340,#f1ecff);--soft:light-dark(#6b6185,#b9b1d6);
+--card:light-dark(rgba(255,255,255,.72),rgba(28,24,60,.72));--line:light-dark(rgba(43,35,64,.14),rgba(255,255,255,.16));
+--accent:light-dark(#ff5c9a,#ff8fc0)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%;overscroll-behavior:none}
+body{margin:0;color:var(--ink);font:16px/1.6 "Zen Maru Gothic",system-ui,sans-serif;overflow:hidden;position:fixed;inset:0;
+background:linear-gradient(170deg,var(--sky1),var(--sky2));-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;
+--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);--kb:0px}
+#stage{position:fixed;inset:0;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+header{position:fixed;top:calc(14px + var(--sat));left:calc(18px + var(--sal));right:calc(18px + var(--sar));display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none;z-index:5}
+#helpBtn{display:none;pointer-events:auto;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:18px;font-weight:700;backdrop-filter:blur(10px);touch-action:manipulation}
+#helpBtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.04em}
+.help{font-size:13px;color:var(--soft);text-align:right;line-height:1.7;max-width:22em}
+.count{font-size:13px;color:var(--soft);margin-top:2px}
+.b{position:absolute;left:0;top:0;border-radius:50%;display:grid;place-items:center;text-align:center;cursor:grab;user-select:none;
+will-change:transform;
+background:
+ radial-gradient(circle at 30% 24%,rgba(255,255,255,.95) 0 5%,rgba(255,255,255,0) 11%),
+ radial-gradient(circle at 70% 78%,rgba(255,255,255,.5) 0 3%,rgba(255,255,255,0) 7%),
+ radial-gradient(circle at 50% 50%,rgba(255,255,255,.08) 55%,hsla(var(--h),95%,72%,.38) 80%,hsla(calc(var(--h) + 70),95%,75%,.55) 93%,rgba(255,255,255,.75) 100%);
+box-shadow:inset 0 0 18px hsla(var(--h),90%,80%,.45),0 6px 24px hsla(var(--h),60%,40%,.12);
+backdrop-filter:blur(1.5px)}
+.b .in{padding:18%;max-height:100%;overflow:hidden;display:flex;flex-direction:column;gap:.35em;align-items:center;justify-content:center;pointer-events:none}
+.b .t{display:block;overflow-wrap:anywhere;line-height:1.45}
+.b .t+.t::before{content:"";display:block;width:6px;height:6px;border-radius:50%;margin:0 auto .35em;background:hsla(var(--h),90%,65%,.9)}
+.b.drag{cursor:grabbing;z-index:3}
+.b.target{box-shadow:inset 0 0 26px hsla(var(--h),95%,75%,.8),0 0 0 4px rgba(255,255,255,.55),0 0 34px hsla(var(--h),95%,70%,.6)}
+.b.wob{animation:wob .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes wob{0%{scale:1.25 .8}35%{scale:.88 1.12}65%{scale:1.06 .95}100%{scale:1 1}}
+.b.born{animation:born .9s cubic-bezier(.2,1.4,.4,1)}
+@keyframes born{0%{scale:.1;opacity:0}60%{scale:1.08;opacity:1}100%{scale:1}}
+.pop{position:absolute;border-radius:50%;border:3px solid rgba(255,255,255,.9);pointer-events:none;animation:pop .45s ease-out forwards}
+@keyframes pop{to{scale:1.7;opacity:0;border-width:1px}}
+.spark{position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;background:#fff;box-shadow:0 0 8px #fff;animation:spark .7s ease-out forwards}
+@keyframes spark{to{translate:var(--dx) var(--dy);scale:.2;opacity:0}}
+#trash{position:fixed;right:calc(22px + var(--sar));bottom:calc(118px + var(--sab) + var(--kb));width:76px;height:76px;border-radius:50%;display:grid;place-items:center;
+background:var(--card);border:2px dashed var(--line);color:var(--soft);font-size:12px;opacity:0;scale:.7;transition:.25s;pointer-events:none;z-index:4;text-align:center;line-height:1.3}
+#trash.show{opacity:1;scale:1}#trash.hot{border-color:var(--accent);color:var(--accent);scale:1.15}
+#trash svg{width:24px;height:24px;display:block;margin:0 auto 2px}
+button,.pbtn,.send{touch-action:manipulation}
+form{position:fixed;left:50%;bottom:calc(20px + var(--sab) + var(--kb));transition:bottom .15s;translate:-50% 0;width:min(640px,calc(100% - 28px));display:flex;gap:8px;align-items:flex-end;z-index:6;
+background:var(--card);border:1px solid var(--line);border-radius:28px;padding:8px 8px 8px 20px;backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(40,20,80,.15)}
+textarea{flex:1;border:0;background:none;color:inherit;font:inherit;font-size:16px;resize:none;outline:none;max-height:140px;padding:9px 0;line-height:1.5}
+textarea::placeholder{color:var(--soft)}
+button{font:inherit;cursor:pointer}
+.send{flex:none;height:44px;padding:0 18px;border-radius:22px;border:0;background:var(--accent);color:#fff;font-weight:700}
+.send:focus-visible,.pbtn:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#panel{position:fixed;inset:0;display:none;place-items:center;z-index:10;background:rgba(20,10,40,.25);backdrop-filter:blur(3px);padding:16px}
+#panel.open{display:grid}
+.sheet{width:min(520px,100%);max-height:85vh;overflow:auto;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:28px;padding:22px}
+.sheet h2{margin:0 0 4px;font-size:18px}
+.sheet .meta{font-size:13px;color:var(--soft);margin-bottom:14px}
+.frag{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+.frag textarea{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.12);max-height:none}
+.pbtn{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:transparent;color:inherit;font-size:14px}
+.pbtn.x{width:44px;padding:0;flex:none}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.row .grow{flex:1}
+.danger{color:var(--accent);border-color:var(--accent)}
+#toast{position:fixed;left:50%;bottom:calc(96px + var(--sab) + var(--kb));translate:-50% 20px;opacity:0;transition:.3s;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:20px;padding:6px 6px 6px 16px;display:flex;gap:10px;align-items:center;font-size:14px;z-index:7;pointer-events:none}
+#toast.show{opacity:1;translate:-50% 0;pointer-events:auto}
+#toast button{min-height:36px;border:0;border-radius:16px;padding:0 12px;background:var(--accent);color:#fff}
+.help.pop-help{display:block;pointer-events:auto;position:fixed;top:calc(68px + var(--sat));right:calc(14px + var(--sar));left:calc(14px + var(--sal));max-width:none;text-align:left;background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:14px 16px;color:var(--ink);font-size:14px}
+@media(max-width:600px),(pointer:coarse){
+ .help{display:none}#helpBtn{display:block}
+ #trash{bottom:calc(98px + var(--sab) + var(--kb));right:calc(14px + var(--sar));width:84px;height:84px}
+ h1{font-size:19px}
+ form{bottom:calc(12px + var(--sab) + var(--kb));padding-left:16px}
+ .send{padding:0 14px}
+ .b{backdrop-filter:none}
+ .sheet{padding:18px;border-radius:24px;max-height:calc(100% - 24px)}
+ .row .pbtn{flex:1 1 auto}.row .grow{display:none}
+}
+@media(hover:hover){.b:hover{box-shadow:inset 0 0 22px hsla(var(--h),95%,80%,.65),0 8px 30px hsla(var(--h),60%,40%,.2)}}
+@media(prefers-reduced-motion:reduce){.b.wob,.b.born,.pop,.spark{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage" aria-label="シャボン玉の空"></div>
+<header>
+  <div><h1>しゃぼん日記</h1><div class="count" id="count"></div></div>
+  <button id="helpBtn" type="button" aria-label="使い方" aria-expanded="false">?</button>
+  <div class="help" id="help"><span class="pc">Enterで浮かべる・Shift+Enterで改行<br>ドラッグで動かす／重ねるとくっつく<br>クリックで開く・ゴミ箱へ運ぶと消える<br>玉を選んでDeleteキーでも消せます</span><span class="sp" hidden>送信キーで浮かべる<br>指でつかんで動かす／重ねるとくっつく<br>タップで開く（改行・書き直しもここで）<br>右下のゴミ箱へ運ぶと消える</span></div>
+</header>
+<div id="trash"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>はじく</div></div>
+<form id="f">
+  <textarea id="txt" rows="1" enterkeyhint="send" autocomplete="off" placeholder="いま浮かんでいることを書いて、Enter" aria-label="アイデアを書く"></textarea>
+  <button class="send" type="submit">浮かべる</button>
+</form>
+<div id="toast"><span id="tmsg"></span><button id="undo" type="button">元に戻す</button></div>
+<div id="panel" role="dialog" aria-modal="true" aria-labelledby="ptitle">
+  <div class="sheet">
+    <h2 id="ptitle">シャボン玉</h2>
+    <div class="meta" id="pmeta"></div>
+    <div id="frags"></div>
+    <div class="row">
+      <button class="pbtn" id="padd" type="button">ひとこと足す</button>
+      <button class="pbtn" id="psplit" type="button">ばらばらにする</button>
+      <span class="grow"></span>
+      <button class="pbtn danger" id="pdel" type="button">はじく</button>
+      <button class="pbtn" id="pclose" type="button">とじる</button>
+    </div>
+  </div>
+</div>
+<script>
+{
+const KEY='shabon-journal-v1';
+const stage=document.getElementById('stage'),txt=document.getElementById('txt'),form=document.getElementById('f');
+const trash=document.getElementById('trash'),toast=document.getElementById('toast'),countEl=document.getElementById('count');
+const panel=document.getElementById('panel'),frags=document.getElementById('frags');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let bubbles=[],drag=null,openId=null,lastDeleted=null,toastTimer=0,uid=Date.now();
+const isTouch=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&innerWidth<900);
+
+/* 玉が漂える範囲（上の見出しと下の書き込み欄を避ける） */
+const bounds={top:60,bottom:400};
+function measure(){
+  const sat=parseFloat(getComputedStyle(document.body).getPropertyValue('padding-top'))||0;
+  const hr=document.querySelector('header').getBoundingClientRect();
+  bounds.top=Math.max(hr.bottom-10,50+sat);
+  bounds.bottom=form.getBoundingClientRect().top-8;
+}
+/* スマホのキーボード：見えている範囲に合わせて書き込み欄を持ち上げる */
+const vv=window.visualViewport;
+function onVV(){
+  if(!vv)return;
+  const kb=Math.max(0,innerHeight-vv.height-vv.offsetTop);
+  document.body.style.setProperty('--kb',(kb>60?kb:0)+'px');
+  if(kb>60)window.scrollTo(0,0);
+  requestAnimationFrame(measure);
+}
+if(vv){vv.addEventListener('resize',onVV);vv.addEventListener('scroll',onVV)}
+
+/* 使い方（スマホでは ? ボタンで開閉） */
+const helpBtn=document.getElementById('helpBtn'),help=document.getElementById('help');
+if(isTouch){help.querySelector('.pc').hidden=true;help.querySelector('.sp').hidden=false;txt.placeholder='いま浮かんでいることを書いて、送信'}
+helpBtn.addEventListener('click',()=>{const on=help.classList.toggle('pop-help');helpBtn.setAttribute('aria-expanded',on);helpBtn.textContent=on?'×':'?'});
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const W=()=>stage.clientWidth,H=()=>stage.clientHeight;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const fmt=t=>new Date(t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+function radius(b){
+  const len=b.texts.reduce((n,s)=>n+s.length,0)+b.texts.length*6;
+  const base=Math.min(W(),H())<600?40:48;
+  return Math.min(base+Math.sqrt(len)*10,Math.min(W(),H())*0.32);
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(bubbles.map(({id,texts,x,y,h,t})=>({id,texts,x:x/W(),y:y/H(),h,t}))))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(Array.isArray(d))return d}catch(e){}return null}
+
+function make(texts,x,y,h,t,id){
+  const b={id:id||'b'+(uid++),texts,x,y,h:h??Math.floor(rnd(0,360)),t:t||Date.now(),vx:rnd(-.3,.3),vy:rnd(-.3,.3),ph:rnd(0,6.28)};
+  const el=document.createElement('div');el.className='b';el.tabIndex=0;el.dataset.id=b.id;
+  b.el=el;stage.appendChild(el);draw(b);bubbles.push(b);return b;
+}
+function draw(b){
+  b.r=radius(b);const el=b.el;
+  el.style.setProperty('--h',b.h);el.style.width=el.style.height=b.r*2+'px';
+  const total=b.texts.join('').length;
+  el.style.fontSize=(total>120?12.5:total>50?14:15.5)+'px';
+  el.innerHTML='<div class="in">'+b.texts.map(s=>'<span class="t">'+esc(s.length>90?s.slice(0,88)+'…':s)+'</span>').join('')+'</div>';
+  el.setAttribute('aria-label',b.texts.join('、'));
+  place(b);
+}
+function place(b){b.el.style.transform=`translate(${b.x-b.r}px,${b.y-b.r}px)`}
+function updateCount(){const n=bubbles.length;countEl.textContent=n?`${n}個のシャボン玉`:'まだ何も浮かんでいません'}
+
+function sparkle(x,y,h,n=10){
+  if(reduce)return;
+  for(let i=0;i<n;i++){const s=document.createElement('div');s.className='spark';const a=i/n*6.28,d=rnd(30,70);
+    s.style.left=x-4+'px';s.style.top=y-4+'px';s.style.setProperty('--dx',Math.cos(a)*d+'px');s.style.setProperty('--dy',Math.sin(a)*d+'px');
+    s.style.background=`hsl(${h+i*20},95%,85%)`;stage.appendChild(s);setTimeout(()=>s.remove(),750)}
+}
+function popRing(b){const p=document.createElement('div');p.className='pop';p.style.left=b.x-b.r+'px';p.style.top=b.y-b.r+'px';p.style.width=p.style.height=b.r*2+'px';stage.appendChild(p);setTimeout(()=>p.remove(),500)}
+function wob(b){b.el.classList.remove('wob');void b.el.offsetWidth;b.el.classList.add('wob')}
+
+function add(text){
+  const s=text.trim();if(!s)return;
+  const fr=form.getBoundingClientRect();
+  const b=make([s],W()/2+rnd(-40,40),fr.top-80);
+  b.vx=rnd(-1.2,1.2);b.vy=rnd(-2.6,-1.6);
+  b.el.classList.add('born');setTimeout(()=>b.el.classList.remove('born'),900);
+  updateCount();save();
+}
+function remove(b,keep=true){
+  popRing(b);sparkle(b.x,b.y,b.h,8);b.el.remove();bubbles=bubbles.filter(x=>x!==b);
+  if(keep){lastDeleted={texts:b.texts,x:b.x,y:b.y,h:b.h,t:b.t};showToast('シャボン玉をはじきました')}
+  updateCount();save();
+}
+function merge(a,into){
+  into.texts=into.texts.concat(a.texts);into.t=Math.min(into.t,a.t);
+  into.h=Math.round((into.h+a.h)/2+(Math.abs(into.h-a.h)>180?180:0))%360;
+  into.x=(into.x+a.x)/2;into.y=(into.y+a.y)/2;
+  a.el.remove();bubbles=bubbles.filter(x=>x!==a);
+  draw(into);wob(into);sparkle(into.x,into.y,into.h,14);updateCount();save();
+}
+function showToast(m){document.getElementById('tmsg').textContent=m;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),5000)}
+document.getElementById('undo').onclick=()=>{if(!lastDeleted)return;const d=lastDeleted;const b=make(d.texts,d.x,d.y,d.h,d.t);b.el.classList.add('born');lastDeleted=null;toast.classList.remove('show');updateCount();save()};
+
+/* ---- 入力 ---- */
+function grow(){txt.style.height='auto';txt.style.height=Math.min(txt.scrollHeight,140)+'px'}
+txt.addEventListener('input',e=>{
+  /* スマホのキーボードは keydown で Enter を送らないことがあるので、改行の入力でも浮かべる */
+  if((e.inputType==='insertLineBreak'||e.inputType==='insertParagraph')&&!e.isComposing){
+    const v=txt.value.replace(/\n$/,'');add(v);txt.value='';
+  }
+  grow();
+});
+txt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229){e.preventDefault();add(txt.value);txt.value='';grow()}});
+form.addEventListener('submit',e=>{e.preventDefault();add(txt.value);txt.value='';grow();txt.focus()});
+
+/* ---- ドラッグ ---- */
+function findTarget(b){
+  let best=null,bd=1e9;
+  for(const o of bubbles){if(o===b)continue;const d=Math.hypot(o.x-b.x,o.y-b.y);if(d<(o.r+b.r)*0.62&&d<bd){bd=d;best=o}}
+  return best;
+}
+function overTrash(x,y){const r=trash.getBoundingClientRect();return Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2))<70}
+stage.addEventListener('pointerdown',e=>{
+  if(drag)return; /* 2本目の指は無視 */
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  const el=e.target.closest('.b');if(!el){if(document.activeElement===txt&&isTouch)txt.blur();return}
+  e.preventDefault();
+  const b=bubbles.find(x=>x.id===el.dataset.id);if(!b)return;
+  el.setPointerCapture(e.pointerId);
+  drag={b,pid:e.pointerId,ox:e.clientX-b.x,oy:e.clientY-b.y,sx:e.clientX,sy:e.clientY,moved:false,lx:e.clientX,ly:e.clientY,lt:performance.now(),target:null};
+  el.classList.add('drag');
+});
+stage.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.pid)return;const b=drag.b;
+  if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>(e.pointerType==='mouse'?5:10)&&!drag.moved){drag.moved=true;trash.classList.add('show')}
+  if(!drag.moved)return;
+  const now=performance.now(),dt=Math.max(now-drag.lt,1);
+  b.vx=(e.clientX-drag.lx)/dt*12;b.vy=(e.clientY-drag.ly)/dt*12;drag.lx=e.clientX;drag.ly=e.clientY;drag.lt=now;
+  b.x=e.clientX-drag.ox;b.y=e.clientY-drag.oy;place(b);
+  const hot=overTrash(e.clientX,e.clientY);trash.classList.toggle('hot',hot);
+  const t=hot?null:findTarget(b);
+  if(t!==drag.target){drag.target?.el.classList.remove('target');t?.el.classList.add('target');drag.target=t}
+});
+function endDrag(e){
+  if(!drag||e.pointerId!==drag.pid)return;const {b,moved,target}=drag;
+  if(e.type==='pointercancel'){b.el.classList.remove('drag');target?.el.classList.remove('target');trash.classList.remove('show','hot');drag=null;save();return}
+  b.el.classList.remove('drag');target?.el.classList.remove('target');
+  trash.classList.remove('show','hot');
+  if(!moved){drag=null;openPanel(b);return}
+  if(overTrash(e.clientX,e.clientY))remove(b);
+  else if(target)merge(b,target);
+  else{b.vx=Math.max(-6,Math.min(6,b.vx));b.vy=Math.max(-6,Math.min(6,b.vy));save()}
+  drag=null;
+}
+stage.addEventListener('pointerup',endDrag);
+stage.addEventListener('pointercancel',endDrag);
+stage.addEventListener('keydown',e=>{
+  const el=e.target.closest('.b');const b=el&&bubbles.find(x=>x.id===el.dataset.id);if(!b)return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();openPanel(b)}
+  else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();remove(b);txt.focus()}
+  else if(e.key.startsWith('Arrow')){e.preventDefault();const s=e.shiftKey?40:12;
+    if(e.key==='ArrowLeft')b.x-=s;if(e.key==='ArrowRight')b.x+=s;if(e.key==='ArrowUp')b.y-=s;if(e.key==='ArrowDown')b.y+=s;b.vx=b.vy=0;place(b);save()}
+});
+stage.addEventListener('contextmenu',e=>{if(e.target.closest('.b'))e.preventDefault()});
+
+/* ---- 詳細パネル ---- */
+function current(){return bubbles.find(x=>x.id===openId)}
+function renderPanel(){
+  const b=current();if(!b)return;
+  document.getElementById('ptitle').textContent=b.texts.length>1?`くっついたアイデア（${b.texts.length}つ）`:'シャボン玉';
+  document.getElementById('pmeta').textContent=fmt(b.t)+' に浮かべた';
+  frags.innerHTML=b.texts.map((s,i)=>`<div class="frag"><textarea rows="2" data-i="${i}" aria-label="ことば${i+1}">${esc(s)}</textarea>${b.texts.length>1?`<button class="pbtn x" type="button" data-rm="${i}" aria-label="このことばを外す">×</button>`:''}</div>`).join('');
+  frags.querySelectorAll('textarea').forEach(t=>{t.style.height=t.scrollHeight+4+'px'});
+  document.getElementById('psplit').style.display=b.texts.length>1?'':'none';
+}
+function openPanel(b){openId=b.id;renderPanel();panel.classList.add('open');if(!isTouch)setTimeout(()=>frags.querySelector('textarea')?.focus(),30)}
+function closePanel(){const b=current();if(b){b.texts=b.texts.map(s=>s.trim()).filter(Boolean);if(!b.texts.length)remove(b);else{draw(b);wob(b);save()}}panel.classList.remove('open');openId=null}
+frags.addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;const b=current();b.texts[+t.dataset.i]=t.value;t.style.height='auto';t.style.height=t.scrollHeight+4+'px'});
+frags.addEventListener('click',e=>{const i=e.target.dataset.rm;if(i==null)return;const b=current();const [s]=b.texts.splice(+i,1);
+  const n=make([s],b.x+rnd(-1,1)*(b.r+40),b.y+rnd(-1,1)*(b.r+40));n.el.classList.add('born');renderPanel();updateCount();save()});
+document.getElementById('padd').onclick=()=>{const b=current();b.texts.push('');renderPanel();const ts=frags.querySelectorAll('textarea');ts[ts.length-1].focus()};
+document.getElementById('psplit').onclick=()=>{const b=current();const rest=b.texts.slice(1);b.texts=b.texts.slice(0,1);
+  rest.forEach((s,i)=>{const a=i/rest.length*6.28;const n=make([s],b.x+Math.cos(a)*(b.r+50),b.y+Math.sin(a)*(b.r+50),(b.h+40*(i+1))%360);n.vx=Math.cos(a)*3;n.vy=Math.sin(a)*3;n.el.classList.add('born')});
+  sparkle(b.x,b.y,b.h,12);closePanel();updateCount()};
+document.getElementById('pdel').onclick=()=>{const b=current();panel.classList.remove('open');openId=null;if(b)remove(b)};
+document.getElementById('pclose').onclick=closePanel;
+panel.addEventListener('click',e=>{if(e.target===panel)closePanel()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('open'))closePanel()});
+
+/* ---- ふわふわ ---- */
+let last=performance.now(),saveTick=0;
+function tick(now){
+  const dt=Math.min((now-last)/16.7,3);last=now;const w=W(),bottom=bounds.bottom,top=bounds.top;
+  for(const b of bubbles){
+    if(drag&&drag.b===b&&drag.moved)continue;
+    b.ph+=0.01*dt;
+    b.vx+=Math.cos(b.ph*1.3+b.h)*0.012*dt;b.vy+=Math.sin(b.ph)*0.012*dt-0.002*dt;
+    for(const o of bubbles){if(o===b)continue;const dx=b.x-o.x,dy=b.y-o.y,d=Math.hypot(dx,dy)||1,min=b.r+o.r+6;
+      if(d<min){const f=(min-d)/min*0.06*dt;b.vx+=dx/d*f;b.vy+=dy/d*f}}
+    b.vx*=Math.pow(0.985,dt);b.vy*=Math.pow(0.985,dt);
+    const sp=Math.hypot(b.vx,b.vy);if(sp<0.12&&!reduce){b.vx+=Math.cos(b.ph)*0.02;b.vy+=Math.sin(b.ph)*0.02}
+    if(reduce){b.vx*=0.9;b.vy*=0.9}
+    b.x+=b.vx*dt;b.y+=b.vy*dt;
+    if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*0.7}if(b.x>w-b.r){b.x=w-b.r;b.vx=-Math.abs(b.vx)*0.7}
+    if(b.y<b.r+top){b.y=b.r+top;b.vy=Math.abs(b.vy)*0.7}
+    if(b.y>bottom-b.r){b.y=Math.max(bottom-b.r,b.r+top);b.vy=-Math.abs(b.vy)*0.7}
+    place(b);
+  }
+  if((saveTick+=dt)>180){saveTick=0;save()}
+  requestAnimationFrame(tick);
+}
+
+/* ---- はじまり ---- */
+const saved=load();
+if(saved&&saved.length){saved.forEach(d=>make(d.texts,d.x*W(),d.y*H(),d.h,d.t,d.id))}
+else{
+  [[isTouch?'書いて「浮かべる」を押すと、ことばがシャボン玉になって浮かびます':'Enterを押すと、ことばがシャボン玉になって浮かびます'],['玉をつかんで、ほかの玉に重ねるとくっつきます'],['タップすると開いて、書き直したり、ばらばらにしたりできます'],['いらない玉は右下のゴミ箱へ運ぶと、はじけて消えます']]
+   .forEach((t,i)=>make(t,W()*(0.25+0.5*(i%2))+rnd(-30,30),H()*(0.3+0.22*Math.floor(i/2)),[330,200,270,160][i]));
+}
+updateCount();
+let rz=0;addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{bubbles.forEach(draw);measure()})});
+addEventListener('orientationchange',()=>setTimeout(()=>{bubbles.forEach(draw);measure()},250));
+addEventListener('pagehide',save);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();last=performance.now()});
+measure();onVV();
+requestAnimationFrame(tick);
+if(!isTouch)txt.focus();
+}
+</script>
+</body>
+</html>
